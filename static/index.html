@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>E-Nose Field Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f2f4f0;
+    --grid-line: #d7ddd3;
+    --ink: #1c2b26;
+    --ink-soft: #5a6a63;
+    --panel: #ffffff;
+    --panel-border: #cfd6cb;
+    --warm: #c1440e;
+    --warm-dim: #c1440e33;
+    --cool: #1b7f79;
+    --cool-dim: #1b7f7933;
+    --ok: #3c8a5b;
+    --warn: #c1440e;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--paper);
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 28px 28px;
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .panel {
+    width: 100%;
+    max-width: 760px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    box-shadow: 0 1px 0 var(--panel-border), 0 12px 30px -18px rgba(28, 43, 38, 0.35);
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 22px 28px 18px;
+    border-bottom: 1px solid var(--panel-border);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .panel-header h1 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.01em;
+  }
+
+  .panel-header .subtitle {
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    margin-top: 4px;
+  }
+
+  .status-chip {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ok);
+    transition: background 0.3s ease;
+  }
+  .status-dot.warn { background: var(--warn); }
+  .status-dot.idle { background: var(--ink-soft); }
+  .status-dot.offline { background: #7b8780; }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 28px;
+    border-top: 1px solid var(--panel-border);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.76rem;
+    color: var(--ink-soft);
+  }
+
+  .footer strong {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .loading-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: grid;
+    place-items: center;
+    background: #102a2c;
+    color: #e8f2db;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+  }
+
+  .loading-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+  .loading-inner { width: min(440px, calc(100% - 48px)); }
+  .loading-kicker { color: #b8d96b; font: 500 0.72rem 'IBM Plex Mono', monospace; letter-spacing: 0.14em; }
+  .loading-screen h2 { margin: 18px 0 30px; font-size: clamp(2.5rem, 8vw, 4.8rem); line-height: 0.92; letter-spacing: -0.07em; font-weight: 500; }
+  .loading-track { height: 5px; background: #365153; overflow: hidden; }
+  .loading-track span { display: block; width: 0; height: 100%; background: #b8d96b; animation: load 1.5s ease forwards; }
+  .loading-meta { display: flex; justify-content: space-between; margin-top: 10px; color: #9ab3a8; font: 0.7rem 'IBM Plex Mono', monospace; }
+  @keyframes load { to { width: 100%; } }
+  .azure-button { display: inline-block; max-width: 100%; border: 0; padding: 10px 14px; color: #fff; background: var(--cool); font: 500 0.76rem 'IBM Plex Mono', monospace; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+  .azure-button:hover { background: var(--ink); }
+  .settings-button { display: inline-block; border: 1px solid var(--panel-border); padding: 9px 13px; color: var(--ink); background: var(--panel); font: 500 0.76rem 'IBM Plex Mono', monospace; text-decoration: none; }
+  .settings-button:hover { color: #fff; background: var(--ink); }
+  .chart-panel { padding: 22px 28px 18px; border-top: 1px solid var(--panel-border); }
+  .chart-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+  .chart-heading h2 { margin: 0; font-size: 0.95rem; font-weight: 600; }
+  .chart-heading span { color: var(--ink-soft); font: 0.7rem 'IBM Plex Mono', monospace; }
+  #historyChart { display: block; width: 100%; height: 260px; margin-top: 15px; }
+  .chart-grid { stroke: var(--grid-line); stroke-width: 1; }
+  .chart-label { fill: var(--ink-soft); font: 10px 'IBM Plex Mono', monospace; }
+  .chart-temp, .chart-humidity { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .chart-temp { stroke: var(--warm); }
+  .chart-humidity { stroke: var(--cool); }
+  .chart-legend { display: flex; gap: 13px; margin-top: 8px; color: var(--ink-soft); font: 0.68rem 'IBM Plex Mono', monospace; }
+  .chart-legend span::before { content: ''; display: inline-block; width: 14px; height: 3px; margin: 0 5px 3px 0; background: var(--warm); }
+  .chart-legend span:last-child::before { background: var(--cool); }
+  .evaluation-panel { border-top: 1px solid var(--panel-border); padding: 20px 28px 22px; }
+  .evaluation-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+  .evaluation-heading h2 { margin: 0; font-size: 0.95rem; font-weight: 600; }
+  .evaluation-heading span { color: var(--ink-soft); font: 0.7rem 'IBM Plex Mono', monospace; }
+  .evaluation-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 14px; background: var(--panel-border); }
+  .evaluation-item { min-width: 0; padding: 13px 14px; background: var(--paper); }
+  .evaluation-label { color: var(--ink-soft); font: 0.68rem 'IBM Plex Mono', monospace; text-transform: uppercase; }
+  .evaluation-value { display: block; margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 1.05rem 'IBM Plex Mono', monospace; }
+  .evaluation-note { margin: 12px 0 0; color: var(--ink-soft); font-size: 0.78rem; }
+
+  @media (max-width: 520px) {
+    .evaluation-grid { grid-template-columns: 1fr 1fr; }
+    .panel-header { flex-direction: column; align-items: stretch; gap: 14px; }
+    .header-actions { justify-content: flex-start; }
+    .azure-button { flex: 1 1 auto; min-width: 0; }
+    .settings-button { flex: 0 0 auto; }
+    .chart-panel { padding: 20px 16px 14px; }
+    .chart-heading { align-items: flex-start; flex-direction: column; gap: 5px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-inner">
+    <div class="loading-kicker">E-NOSE / FIELD OBSERVATORY</div>
+    <h2>Calibrating the atmosphere.</h2>
+    <div class="loading-track"><span></span></div>
+    <div class="loading-meta"><span>AZURE TELEMETRY LINK</span><span>ONLINE</span></div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <div>
+      <h1>E-Nose field monitor</h1>
+      <div class="subtitle">Pembacaan sensor langsung dari perangkat lapangan</div>
+    </div>
+    <div class="header-actions">
+      <div class="status-chip">
+        <span class="status-dot idle" id="statusDot"></span>
+        <span id="statusText">Menghubungkan…</span>
+      </div>
+      <a class="azure-button" href="/records.html">Buka data realtime Azure ↗</a>
+      <a class="settings-button" href="/settings.html">Settings</a>
+    </div>
+  </div>
+
+  <div class="chart-panel">
+    <div class="chart-heading">
+      <h2>Jejak lingkungan</h2>
+      <span>24 observasi terakhir · realtime Azure</span>
+    </div>
+    <svg id="historyChart" viewBox="0 0 700 190" role="img" aria-label="Grafik ilmiah suhu dan kelembapan"></svg>
+    <div class="chart-legend"><span>Suhu (°C)</span><span>Kelembapan (% RH)</span></div>
+  </div>
+
+  <section class="evaluation-panel" aria-labelledby="evaluationTitle">
+    <div class="evaluation-heading">
+      <h2 id="evaluationTitle">Evaluasi data</h2>
+      <span id="evaluationWindow">Menunggu data</span>
+    </div>
+    <div class="evaluation-grid">
+      <div class="evaluation-item"><span class="evaluation-label">Sampel</span><strong class="evaluation-value" id="evaluationCount">--</strong></div>
+      <div class="evaluation-item"><span class="evaluation-label">Rata-rata suhu</span><strong class="evaluation-value" id="evaluationTemperature">--</strong></div>
+      <div class="evaluation-item"><span class="evaluation-label">Rata-rata RH</span><strong class="evaluation-value" id="evaluationHumidity">--</strong></div>
+      <div class="evaluation-item"><span class="evaluation-label">Status dominan</span><strong class="evaluation-value" id="evaluationStatus">--</strong></div>
+    </div>
+    <p class="evaluation-note" id="evaluationRange">Rentang data akan tampil setelah pembacaan diterima.</p>
+  </section>
+
+</div>
+
+<script>
+  function setStatus(kind, text) {
+    const dot = document.getElementById('statusDot');
+    dot.className = 'status-dot ' + kind;
+    document.getElementById('statusText').textContent = text;
+  }
+
+  function updateDeviceStatus(data) {
+    if (!data.received_at_ms) {
+      setStatus('idle', 'Timestamp diperlukan');
+      return;
+    }
+    const ageSeconds = Math.max(0, (Date.now() - data.received_at_ms) / 1000);
+    if (ageSeconds <= 12) {
+      setStatus('ok', 'DEVICE LIVE');
+    } else if (ageSeconds <= 30) {
+      setStatus('warn', 'DATA TERLAMBAT');
+    } else {
+      setStatus('offline', 'DEVICE OFFLINE');
+    }
+  }
+
+  function renderHistory(rows) {
+    const svg = document.getElementById('historyChart');
+    const width = 700, height = 190, left = 34, right = 12, top = 12, bottom = 24;
+    const innerWidth = width - left - right, innerHeight = height - top - bottom;
+    const ns = 'http://www.w3.org/2000/svg';
+    svg.innerHTML = '';
+    const add = (tag, attrs) => {
+      const element = document.createElementNS(ns, tag);
+      Object.entries(attrs).forEach(([key, value]) => element.setAttribute(key, value));
+      svg.appendChild(element);
+      return element;
+    };
+    [0, 0.25, 0.5, 0.75, 1].forEach(ratio => {
+      const y = top + innerHeight * (1 - ratio);
+      add('line', { x1: left, y1: y, x2: width - right, y2: y, class: 'chart-grid' });
+      const label = add('text', { x: 2, y: y + 4, class: 'chart-label' });
+      label.textContent = Math.round(40 * ratio) + '°';
+    });
+    if (!rows.length) {
+      const label = add('text', { x: width / 2 - 48, y: height / 2, class: 'chart-label' });
+      label.textContent = 'Menunggu data';
+      return;
+    }
+    const points = key => rows.map((row, index) => {
+      const value = Number(row[key]) || 0;
+      const max = key === 'suhu' ? 40 : 100;
+      const x = left + (rows.length === 1 ? innerWidth / 2 : innerWidth * index / (rows.length - 1));
+      const y = top + innerHeight * (1 - Math.max(0, Math.min(1, value / max)));
+      return `${x},${y}`;
+    }).join(' ');
+    add('polyline', { points: points('suhu'), class: 'chart-temp' });
+    add('polyline', { points: points('kelembapan'), class: 'chart-humidity' });
+    const timestamp = row => row.received_at_ms
+      ? new Date(row.received_at_ms).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })
+      : 'legacy';
+    const first = add('text', { x: left, y: height - 5, class: 'chart-label' });
+    first.textContent = timestamp(rows[0]);
+    const latest = add('text', { x: width - right - 92, y: height - 5, class: 'chart-label' });
+    latest.textContent = timestamp(rows[rows.length - 1]);
+  }
+
+  function evaluateHistory(rows) {
+    const validRows = rows.filter(row => Number.isFinite(Number(row.suhu)) && Number.isFinite(Number(row.kelembapan)));
+    const count = document.getElementById('evaluationCount');
+    const temperature = document.getElementById('evaluationTemperature');
+    const humidity = document.getElementById('evaluationHumidity');
+    const status = document.getElementById('evaluationStatus');
+    const windowLabel = document.getElementById('evaluationWindow');
+    const range = document.getElementById('evaluationRange');
+    if (!validRows.length) {
+      count.textContent = '--'; temperature.textContent = '--'; humidity.textContent = '--'; status.textContent = '--';
+      windowLabel.textContent = 'Menunggu data';
+      range.textContent = 'Rentang data akan tampil setelah pembacaan diterima.';
+      return;
+    }
+    const temperatures = validRows.map(row => Number(row.suhu));
+    const humidities = validRows.map(row => Number(row.kelembapan));
+    const statuses = validRows.reduce((counts, row) => {
+      const label = row.status || 'Normal';
+      counts[label] = (counts[label] || 0) + 1;
+      return counts;
+    }, {});
+    const dominantStatus = Object.entries(statuses).sort((left, right) => right[1] - left[1])[0][0];
+    const average = values => values.reduce((sum, value) => sum + value, 0) / values.length;
+    const formatRange = values => `${Math.min(...values).toFixed(1)}–${Math.max(...values).toFixed(1)}`;
+    count.textContent = validRows.length;
+    temperature.textContent = `${average(temperatures).toFixed(1)} °C`;
+    humidity.textContent = `${average(humidities).toFixed(1)} %`;
+    status.textContent = dominantStatus;
+    windowLabel.textContent = `${validRows.length} record terakhir`;
+    range.textContent = `Rentang suhu ${formatRange(temperatures)} °C · kelembapan ${formatRange(humidities)} % · status terbanyak berdasarkan record tersimpan.`;
+  }
+
+  async function refresh() {
+    try {
+      const [latestResponse, historyResponse] = await Promise.all([
+        fetch('/api/sensor', { cache: 'no-store' }),
+        fetch('/api/sensors', { cache: 'no-store' }),
+      ]);
+      if (!latestResponse.ok) throw new Error('HTTP ' + latestResponse.status);
+      const data = await latestResponse.json();
+      const history = historyResponse.ok ? await historyResponse.json() : [];
+
+      updateDeviceStatus(data);
+
+      renderHistory(history.length ? history : [data]);
+      evaluateHistory(history.length ? history : [data]);
+
+      if (data.device_id === 'waiting-data') setStatus('idle', 'Menunggu data');
+    } catch (e) {
+      setStatus('warn', 'Koneksi terputus');
+    }
+  }
+
+  renderHistory([]);
+  const returningFromNavigation = sessionStorage.getItem('pageNavigation') === '1';
+  sessionStorage.removeItem('pageNavigation');
+  const startDashboard = () => {
+    document.getElementById('loadingScreen').classList.add('hidden');
+    refresh();
+    setInterval(refresh, 3000);
+  };
+  if (returningFromNavigation) setTimeout(startDashboard, 500);
+  else setTimeout(startDashboard, 1600);
+
+  document.querySelectorAll('a[href]').forEach(link => {
+    link.addEventListener('click', event => {
+      const target = link.getAttribute('href');
+      if (!target || !target.startsWith('/')) return;
+      event.preventDefault();
+      document.getElementById('loadingScreen').classList.remove('hidden');
+      sessionStorage.setItem('pageNavigation', '1');
+      setTimeout(() => { window.location.href = target; }, 500);
+    });
+  });
+</script>
+
+</body>
+</html>

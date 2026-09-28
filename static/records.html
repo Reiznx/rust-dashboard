@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Newest Azure Records</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --paper:#eaf0eb; --ink:#10211c; --muted:#64756e; --panel:#f8fbf8; --line:#c9d7cc; --teal:#178d88; --orange:#e26b35; --navy:#193c45; --lime:#b8d96b; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; color:var(--ink); font-family:'Space Grotesk',sans-serif; background:var(--paper); background-image:linear-gradient(rgba(91,124,108,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(91,124,108,.11) 1px,transparent 1px); background-size:32px 32px; }
+    .shell { width:min(1180px,calc(100% - 40px)); margin:auto; padding:34px 0 60px; }
+    .topbar { display:flex; justify-content:space-between; align-items:flex-end; gap:20px; padding-bottom:24px; border-bottom:1px solid var(--line); }
+    .kicker { color:var(--teal); font:500 11px 'DM Mono',monospace; letter-spacing:.14em; text-transform:uppercase; }
+    h1 { margin:12px 0 5px; font-size:clamp(2rem,5vw,4rem); line-height:.9; letter-spacing:-.07em; font-weight:600; }
+    .subtitle { color:var(--muted); font-size:.85rem; }
+    .back { color:#fff; background:var(--navy); padding:11px 14px; text-decoration:none; font:500 .74rem 'DM Mono',monospace; }
+    .back:hover { background:var(--teal); }
+    .report-link { color:var(--ink); border:1px solid var(--line); padding:10px 13px; text-decoration:none; font:500 .74rem 'DM Mono',monospace; }
+    .report-link:hover { color:#fff; background:var(--teal); }
+    .status { display:flex; justify-content:space-between; margin:20px 0 12px; color:var(--muted); font:500 .72rem 'DM Mono',monospace; }
+    .status strong { color:var(--ink); font-weight:500; }
+    .table-wrap { overflow-x:auto; border:1px solid var(--line); background:var(--panel); }
+    table { width:100%; min-width:650px; border-collapse:collapse; text-align:left; }
+    th { padding:13px 16px; color:var(--muted); background:#e1ebe2; font:500 .7rem 'DM Mono',monospace; letter-spacing:.08em; text-transform:uppercase; }
+    td { padding:16px; border-top:1px solid var(--line); font-size:.86rem; }
+    td.number { font:500 1rem 'DM Mono',monospace; }
+    td:first-child { color:var(--muted); font:500 .72rem 'DM Mono',monospace; }
+    .latest { border-left:3px solid var(--lime); }
+    .empty { padding:50px 20px; color:var(--muted); text-align:center; font: .8rem 'DM Mono',monospace; }
+    .pagination { display:flex; justify-content:center; align-items:center; gap:14px; padding:18px 0 0; }
+    .page-button { border:1px solid var(--line); padding:9px 13px; color:var(--ink); background:var(--panel); font:500 .72rem 'DM Mono',monospace; }
+    .page-button:hover:not(:disabled) { color:#fff; background:var(--teal); }
+    .page-button:disabled { cursor:not-allowed; opacity:.4; }
+    .page-number { min-width:70px; color:var(--muted); text-align:center; font:500 .72rem 'DM Mono',monospace; }
+    .record-actions { display:flex; justify-content:flex-end; margin:14px 0 0; }
+    .delete-all { border:1px solid #d9a28d; padding:9px 13px; color:#a94725; background:transparent; font:500 .72rem 'DM Mono',monospace; }
+    .delete-all:hover { color:#fff; background:#a94725; }
+    .delete-row { border:1px solid #e0b5a4; padding:6px 8px; color:#a94725; background:transparent; font:500 .68rem 'DM Mono',monospace; }
+    .delete-row:hover { color:#fff; background:#a94725; }
+    .loading-screen { position:fixed; inset:0; z-index:10; display:grid; place-items:center; background:#102a2c; color:#e8f2db; opacity:0; visibility:hidden; transition:opacity .6s ease,visibility .6s ease; }
+    .loading-screen.visible { opacity:1; visibility:visible; }
+    .loading-inner { width:min(440px,calc(100% - 48px)); }
+    .loading-kicker { color:#b8d96b; font:500 0.72rem 'IBM Plex Mono',monospace; letter-spacing:0.14em; }
+    .loading-screen h2 { margin:18px 0 30px; font-size:clamp(2.5rem,8vw,4.8rem); line-height:0.92; letter-spacing:-0.07em; font-weight:500; }
+    .loading-track { height:5px; background:#365153; overflow:hidden; }
+    .loading-track span { display:block; width:0; height:100%; background:#b8d96b; }
+    .loading-screen.visible .loading-track span { animation:load 1.5s ease forwards; }
+    .loading-meta { display:flex; justify-content:space-between; margin-top:10px; color:#9ab3a8; font:0.7rem 'IBM Plex Mono',monospace; }
+    @keyframes load { to { width:100%; } }
+    @media(max-width:600px) { .shell { width:calc(100% - 24px); padding-top:22px; } .topbar { align-items:flex-start; flex-direction:column; } .back { width:100%; text-align:center; } }
+  </style>
+</head>
+<body>
+  <div class="loading-screen" id="loadingScreen"><div class="loading-inner"><div class="loading-kicker">E-NOSE / FIELD OBSERVATORY</div><h2>Calibrating the atmosphere.</h2><div class="loading-track"><span></span></div><div class="loading-meta"><span>AZURE TELEMETRY LINK</span><span>ONLINE</span></div></div></div>
+  <main class="shell">
+    <header class="topbar">
+      <div><div class="kicker">Azure Cosmos / realtime archive</div><h1>Newest records.</h1><p class="subtitle">The latest observations received from the E-Nose field node.</p></div>
+      <div><a class="report-link" href="/report.html">Generate PDF report</a> <a class="back" href="/">← Back to live monitor</a></div>
+    </header>
+    <div class="status"><span id="state">Reading Azure Cosmos DB…</span><span>Auto refresh <strong>3 s</strong></span></div>
+    <div class="table-wrap">
+      <table><thead><tr><th>#</th><th>Received</th><th>Record ID</th><th>Device</th><th>Temperature</th><th>Humidity</th><th>Status</th><th>Action</th></tr></thead><tbody id="records"><tr><td colspan="8" class="empty">Loading telemetry…</td></tr></tbody></table>
+    </div>
+    <div class="record-actions"><button class="delete-all" id="deleteAll" type="button">Delete all records</button></div>
+    <nav class="pagination" aria-label="Record pages">
+      <button class="page-button" id="previous" type="button">← Previous</button>
+      <span class="page-number" id="pageNumber">Page 1</span>
+      <button class="page-button" id="next" type="button">Next →</button>
+    </nav>
+  </main>
+  <script>
+    const records = document.getElementById('records'); const state = document.getElementById('state'); const previous = document.getElementById('previous'); const next = document.getElementById('next'); const pageNumber = document.getElementById('pageNumber');
+    let currentPage = 1;
+    function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])); }
+    async function loadRecords() {
+      try {
+        const response = await fetch('/api/records?page=' + currentPage, { cache:'no-store' });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const result = await response.json();
+        const rows = result.records || [];
+        records.innerHTML = rows.length ? rows.map((row,index) => `<tr class="${currentPage === 1 && index === 0 ? 'latest' : ''}"><td>${(currentPage - 1) * 10 + index + 1}</td><td>${row.received_at_ms ? new Date(row.received_at_ms).toLocaleString() : 'Legacy record'}</td><td class="number">${escapeHtml(row.id || '—')}</td><td>${escapeHtml(row.device_id)}</td><td class="number">${Number(row.suhu).toFixed(2)} °C</td><td class="number">${Number(row.kelembapan).toFixed(2)} %</td><td>${escapeHtml(row.status || 'Normal')}</td><td><button class="delete-row" data-id="${escapeHtml(row.id || '')}" data-partition-key="${escapeHtml(row.partition_key || '')}" type="button">Delete</button></td></tr>`).join('') : '<tr><td colspan="8" class="empty">No records available from Azure.</td></tr>';
+        pageNumber.textContent = 'Page ' + currentPage;
+        previous.disabled = currentPage === 1;
+        next.disabled = !result.has_next;
+        state.textContent = `${rows.length} records shown · newest first · synchronized ${new Date().toLocaleTimeString()}`;
+      } catch (error) { state.textContent = 'Azure data unavailable'; records.innerHTML = '<tr><td colspan="8" class="empty">Could not read telemetry right now.</td></tr>'; previous.disabled = true; next.disabled = true; }
+    }
+    records.addEventListener('click', async event => {
+      const button = event.target.closest('.delete-row');
+      if (!button || !confirm('Delete this record permanently?')) return;
+      button.disabled = true;
+      await fetch('/api/records', { method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id:button.dataset.id, partition_key:button.dataset.partitionKey }) });
+      loadRecords();
+    });
+    document.getElementById('deleteAll').addEventListener('click', async () => {
+      if (!confirm('Delete ALL sensor records permanently? This cannot be undone.')) return;
+      const button = document.getElementById('deleteAll');
+      button.disabled = true; button.textContent = 'Deleting…';
+      await fetch('/api/records/all', { method:'DELETE' });
+      currentPage = 1; button.disabled = false; button.textContent = 'Delete all records'; loadRecords();
+    });
+    previous.addEventListener('click', () => { if (currentPage > 1) { currentPage -= 1; loadRecords(); } });
+    next.addEventListener('click', () => { currentPage += 1; loadRecords(); });
+    document.querySelectorAll('a[href]').forEach(link => link.addEventListener('click', event => {
+      const target = link.getAttribute('href');
+      if (!target || !target.startsWith('/')) return;
+      event.preventDefault();
+      document.getElementById('loadingScreen').classList.add('visible');
+      sessionStorage.setItem('pageNavigation', '1');
+      setTimeout(() => { window.location.href = target; }, 500);
+    }));
+    loadRecords(); setInterval(loadRecords, 3000);
+  </script>
+</body>
+</html>
